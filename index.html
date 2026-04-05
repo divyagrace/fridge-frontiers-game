@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sniff-o-Meter™</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .container {
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+  }
+  .logo {
+    font-size: 2.5em;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(90deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 5px;
+  }
+  .subtitle {
+    font-size: 0.85em;
+    color: #aaa;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .scenario-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 25px;
+    backdrop-filter: blur(10px);
+  }
+  .scenario-emoji { font-size: 4em; margin-bottom: 15px; }
+  .scenario-title {
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #ffd200;
+  }
+  .scenario-desc {
+    font-size: 1em;
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 5px;
+  }
+  .days-badge {
+    display: inline-block;
+    background: rgba(247, 151, 30, 0.2);
+    border: 1px solid #f7971e;
+    color: #f7971e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+  .meter-section { margin-bottom: 25px; }
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: #888;
+    margin-bottom: 8px;
+  }
+  input[type="range"] {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    appearance: none;
+    background: linear-gradient(90deg, #2ecc71, #f39c12, #e74c3c);
+    cursor: pointer;
+    margin-bottom: 15px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #ffd200;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255,210,0,0.5);
+  }
+  .current-rating {
+    font-size: 3em;
+    font-weight: 900;
+    color: #ffd200;
+    margin-bottom: 5px;
+  }
+  .rating-label {
+    font-size: 0.9em;
+    color: #aaa;
+    min-height: 24px;
+    margin-bottom: 20px;
+  }
+  .submit-btn {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    color: #1a1a2e;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 50px;
+    font-size: 1.1em;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(247,151,30,0.4);
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(247,151,30,0.6); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .feedback-box {
+    display: none;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 25px;
+    margin-top: 20px;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .feedback-verdict {
+    font-size: 1.3em;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+  .feedback-verdict.correct { color: #2ecc71; }
+  .feedback-verdict.close { color: #f39c12; }
+  .feedback-verdict.wrong { color: #e74c3c; }
+  .feedback-text { font-size: 0.95em; color: #ccc; line-height: 1.6; margin-bottom: 15px; }
+  .correct-answer { font-size: 0.85em; color: #888; margin-bottom: 15px; }
+  .next-btn {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 10px 30px;
+    border-radius: 50px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .next-btn:hover { background: rgba(255,255,255,0.2); }
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    margin-bottom: 25px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f7971e, #ffd200);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .question-counter {
+    font-size: 0.8em;
+    color: #888;
+    text-align: right;
+    margin-bottom: 8px;
+  }
+  .final-screen {
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+  .final-score {
+    font-size: 5em;
+    font-weight: 900;
+    background: linear-gradient(90deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+  .final-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 15px;
+  }
+  .final-desc { color: #aaa; line-height: 1.6; margin-bottom: 25px; }
+  .restart-btn {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    color: #1a1a2e;
+    border: none;
+    padding: 12px 35px;
+    border-radius: 50px;
+    font-size: 1em;
+    font-weight: 800;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="game-section">
+    <div class="logo">Sniff-o-Meter™</div>
+    <div class="subtitle">AI-Calibrated Olfactory Assessment System v2.4</div>
+    <div class="question-counter" id="counter">Scenario 1 of 5</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress" style="width:20%"></div></div>
+    <div class="scenario-box">
+      <div class="scenario-emoji" id="emoji">🍱</div>
+      <div class="scenario-title" id="title">Loading scenario...</div>
+      <div class="scenario-desc" id="desc">Please wait while AI calibrates your olfactory parameters...</div>
+      <div class="days-badge" id="badge">⏱ Age unknown</div>
+    </div>
+    <div class="meter-section">
+      <div class="meter-label"><span>😊 Minor Inconvenience</span><span>🚨 Full Workplace Incident</span></div>
+      <input type="range" id="slider" min="1" max="10" value="5" oninput="updateRating()">
+      <div class="current-rating" id="rating-num">5</div>
+      <div class="rating-label" id="rating-label">Moderate. Barb is monitoring.</div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="submitRating()">SUBMIT ASSESSMENT</button>
+    <div class="feedback-box" id="feedback">
+      <div class="feedback-verdict" id="verdict"></div>
+      <div class="feedback-text" id="feedback-text"></div>
+      <div class="correct-answer" id="correct-answer"></div>
+      <button class="next-btn" onclick="nextQuestion()">Next Scenario →</button>
+    </div>
+  </div>
+  <div class="final-screen" id="final-screen">
+    <div class="logo">Results Synergized</div>
+    <div class="final-score" id="final-score">0</div>
+    <div class="final-title" id="final-title">Olfactory Analyst</div>
+    <div class="final-desc" id="final-desc"></div>
+    <button class="restart-btn" onclick="restartGame()">RECALIBRATE →</button>
+  </div>
+</div>
+
+<script>
+const scenarios = [
+  {
+    emoji: "🥡",
+    title: "The Monday Container",
+    desc: "A takeout container from what appears to be last Friday's lunch. It's sealed. The date on the bag says 'Fri' but no month or year. It does not smell from outside the container. Yet.",
+    badge: "⏱ Estimated 3–4 days",
+    correct: 4,
+    feedbacks: {
+      low: "Dangerously optimistic. That container is a sealed biome. The absence of external smell is not reassurance — it's a warning.",
+      correct: "Correct calibration. This is a Level 3 situation: Probably Fine, but requiring immediate action. Sniff test required before consumption.",
+      high: "You are overcorrecting. While caution is warranted, a sealed 4-day container does not yet constitute a workplace incident. Contain your alarm."
+    }
+  },
+  {
+    emoji: "🐟",
+    title: "Larry's Salmon Noodle Scroodle",
+    desc: "It's Tuesday. Larry from Payroll prepped this on Sunday. It is uncovered. The noodles have begun to emit what colleagues describe as 'an assertive presence.' Three people have already moved their lunches to the door shelf.",
+    badge: "⏱ Day 3, uncovered",
+    correct: 8,
+    feedbacks: {
+      low: "Severely underestimated. 'An assertive presence' is eLearning language for 'this smell has opinions and it is expressing them.' Immediate escalation warranted.",
+      correct: "Excellent nose calibration. This is a Level 8 situation. Larry must be notified. The dish must be covered or removed. Barb has already been informed.",
+      high: "While your passion is noted, a 10 implies irreversible workplace damage. Larry is retrievable. The fish is not."
+    }
+  },
+  {
+    emoji: "🧊",
+    title: "The Grey Condiment",
+    desc: "A jar of what was once mustard. The label says 'Best By: see lid.' The lid says nothing. The color has shifted from yellow to a warm grey. The jar is communal property. No one claims it. No one throws it out.",
+    badge: "⏱ Temporal status: unknown",
+    correct: 6,
+    feedbacks: {
+      low: "Insufficient concern for a condiment that has lost its original hue. Grey mustard is not a flavor. It is a decision that must be made.",
+      correct: "Accurate assessment. This is a Level 6 situation: Advanced Deterioration. The item should be photographed for records, then disposed of. Notify Barb.",
+      high: "A condiment, however grey, does not constitute a full incident. It constitutes a very disappointing sandwich and a facilities request."
+    }
+  },
+  {
+    emoji: "✨",
+    title: "The Mysterious Tupperware",
+    desc: "A sealed Tupperware. Pink lid. It appears to be a salad? The greens were once green. Now they are a color that does not have a name in English. The container is not yours. You do not know whose it is. It has been there since before the holiday.",
+    badge: "⏱ Pre-holiday. Minimum 11 days.",
+    correct: 9,
+    feedbacks: {
+      low: "You have underestimated the situation. 11 days in a sealed container is not a food storage situation. It is a science experiment with HR implications.",
+      correct: "Correct. This is approaching Level 7. The container should not be opened under any circumstances. Contact Facilities. Place a note. Alert Barb.",
+      high: "10/10 is reserved for situations that require building evacuation. This requires Facilities, not emergency services. Close, though."
+    }
+  },
+  {
+    emoji: "☕",
+    title: "Someone's Yogurt",
+    desc: "A single-serve yogurt, sealed and labeled with a name: 'DAN.' The expiry date is tomorrow. The yogurt is fine. This scenario is fine. Nothing is wrong. Why are you still reading this?",
+    badge: "⏱ Expires tomorrow. Perfectly fine.",
+    correct: 1,
+    feedbacks: {
+      low: "Correct. Dan's yogurt is not a threat. Dan is on top of his food. Dan is the hero this fridge deserves.",
+      correct: "Accurate. This is a Level 1 or 2 situation. The yogurt is fine. Dan is fine. You may continue your day.",
+      high: "You have rated a perfectly healthy, properly labeled yogurt as a moderate workplace threat. Reflect on this. Dan deserves better."
+    }
+  }
+];
+
+const ratingLabels = {
+  1: "Absolutely fine. Nothing to see here.",
+  2: "Minor. A fleeting awareness.",
+  3: "Noticeable. You glanced twice.",
+  4: "Concerning. You wrinkled your nose.",
+  5: "Moderate. Barb is monitoring.",
+  6: "Elevated. A colleague has made a face.",
+  7: "Serious. The breakroom has been discussed.",
+  8: "Critical. Three people relocated their lunches.",
+  9: "Severe. Facilities has been notified.",
+  10: "DEFCON FRIDGE. Full workplace incident."
+};
+
+let current = 0;
+let totalScore = 0;
+
+function updateRating() {
+  const val = parseInt(document.getElementById('slider').value);
+  document.getElementById('rating-num').textContent = val;
+  document.getElementById('rating-label').textContent = ratingLabels[val];
+}
+
+function submitRating() {
+  const userRating = parseInt(document.getElementById('slider').value);
+  const scenario = scenarios[current];
+  const diff = Math.abs(userRating - scenario.correct);
+  const feedbackBox = document.getElementById('feedback');
+  const verdictEl = document.getElementById('verdict');
+  const feedbackTextEl = document.getElementById('feedback-text');
+  const correctEl = document.getElementById('correct-answer');
+
+  let verdict, feedbackText, points;
+  if (diff === 0) {
+    verdict = "✅ PERFECT CALIBRATION"; verdictEl.className = 'feedback-verdict correct';
+    feedbackText = scenario.feedbacks.correct; points = 10;
+  } else if (diff <= 2) {
+    verdict = "🟡 WITHIN ACCEPTABLE PARAMETERS"; verdictEl.className = 'feedback-verdict close';
+    feedbackText = scenario.feedbacks.correct; points = 7;
+  } else if (userRating < scenario.correct) {
+    verdict = "❌ OLFACTORY UNDERESTIMATION DETECTED"; verdictEl.className = 'feedback-verdict wrong';
+    feedbackText = scenario.feedbacks.low; points = 3;
+  } else {
+    verdict = "❌ OVERCALIBRATION ANOMALY"; verdictEl.className = 'feedback-verdict wrong';
+    feedbackText = scenario.feedbacks.high; points = 3;
+  }
+
+  totalScore += points;
+  verdictEl.textContent = verdict;
+  feedbackTextEl.textContent = feedbackText;
+  correctEl.textContent = `Optimal calibration: ${scenario.correct}/10 — ${ratingLabels[scenario.correct]}`;
+  feedbackBox.style.display = 'block';
+  document.getElementById('submit-btn').disabled = true;
+
+  if (current === scenarios.length - 1) {
+    document.querySelector('.next-btn').textContent = 'View Results →';
+  }
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= scenarios.length) { showFinal(); return; }
+  const s = scenarios[current];
+  document.getElementById('emoji').textContent = s.emoji;
+  document.getElementById('title').textContent = s.title;
+  document.getElementById('desc').textContent = s.desc;
+  document.getElementById('badge').textContent = s.badge;
+  document.getElementById('slider').value = 5;
+  document.getElementById('rating-num').textContent = '5';
+  document.getElementById('rating-label').textContent = ratingLabels[5];
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('submit-btn').disabled = false;
+  document.getElementById('counter').textContent = `Scenario ${current + 1} of ${scenarios.length}`;
+  document.getElementById('progress').style.width = `${((current + 1) / scenarios.length) * 100}%`;
+  document.querySelector('.next-btn').textContent = 'Next Scenario →';
+}
+
+function showFinal() {
+  document.getElementById('game-section').style.display = 'none';
+  const finalScreen = document.getElementById('final-screen');
+  finalScreen.style.display = 'block';
+  const maxScore = scenarios.length * 10;
+  const pct = Math.round((totalScore / maxScore) * 100);
+  document.getElementById('final-score').textContent = `${pct}%`;
+  let title, desc;
+  if (pct >= 85) { title = "Barb-Certified Olfactory Analyst"; desc = "Your nose is calibrated to enterprise standards. The fridge is safe in your awareness. Barb has noted your performance in the records."; }
+  else if (pct >= 60) { title = "Developing Olfactory Awareness"; desc = "You have the instincts, but your calibration needs refinement. Review the Smell Severity Scale module before your next breakroom visit."; }
+  else { title = "Olfactory Recalibration Required"; desc = "Your smell detection system requires significant upgrades. You may be Larry. Please review the full course and report to Barb at your earliest convenience."; }
+  document.getElementById('final-title').textContent = title;
+  document.getElementById('final-desc').textContent = desc;
+}
+
+function restartGame() {
+  current = 0; totalScore = 0;
+  document.getElementById('game-section').style.display = 'block';
+  document.getElementById('final-screen').style.display = 'none';
+  const s = scenarios[0];
+  document.getElementById('emoji').textContent = s.emoji;
+  document.getElementById('title').textContent = s.title;
+  document.getElementById('desc').textContent = s.desc;
+  document.getElementById('badge').textContent = s.badge;
+  document.getElementById('slider').value = 5;
+  document.getElementById('rating-num').textContent = '5';
+  document.getElementById('rating-label').textContent = ratingLabels[5];
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('submit-btn').disabled = false;
+  document.getElementById('counter').textContent = 'Scenario 1 of 5';
+  document.getElementById('progress').style.width = '20%';
+}
+
+// Initialize
+const s0 = scenarios[0];
+document.getElementById('emoji').textContent = s0.emoji;
+document.getElementById('title').textContent = s0.title;
+document.getElementById('desc').textContent = s0.desc;
+document.getElementById('badge').textContent = s0.badge;
+</script>
+</body>
+</html>
